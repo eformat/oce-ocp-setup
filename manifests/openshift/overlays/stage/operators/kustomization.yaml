@@ -17,6 +17,7 @@ resources:
   - github.com/CrunchyData/postgres-operator/config/default?ref=v5.8.9
 patches:
   - path: remove-pgo-subscription.yaml
+  - path: crd-serverside-apply.yaml
 labels:
   - includeSelectors: false
     includeTemplates: false
