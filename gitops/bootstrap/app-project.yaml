@@ -13,6 +13,9 @@ metadata:
 spec:
   description: Declarative OCE platform stages reconciled from oce-ocp-setup.
   sourceRepos:
+    # The deploy source is the maintainer fork; upstream main remains allowed
+    # so the stage Applications can be pointed back after contributions merge.
+    - https://github.com/eformat/oce-ocp-setup.git
     - https://github.com/rh-oce-team/oce-ocp-setup.git
   destinations:
     - server: https://kubernetes.default.svc
@@ -25,6 +28,10 @@ spec:
       namespace: openshell-system
     - server: https://kubernetes.default.svc
       namespace: envoy-gateway-system
+    # Upstream PGO install (OCP 5.0 dropped the OLM package): the operator
+    # runs in its own namespace and manages PostgresClusters cluster-wide.
+    - server: https://kubernetes.default.svc
+      namespace: postgres-operator
   # Exactly the cluster-scoped kinds the five stages create. A missing kind
   # blocks a whole sync wave.
   clusterResourceWhitelist:
@@ -36,5 +43,9 @@ spec:
       kind: RuntimeClass
     - group: rbac.authorization.k8s.io
       kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
     - group: gateway.networking.k8s.io
       kind: GatewayClass

@@ -1,0 +1,13 @@
+# $patch: delete removes the base's OLM Subscription for Crunchy PGO.
+# The OCP 5.0 operator indexes do not carry the crunchy-postgres-operator
+# package (ResolutionFailed: no operators found in any v5.0 catalog), so the
+# subscription can never resolve and would hold the operators wave Degraded
+# forever. PGO is delivered upstream instead: see the additional resource in
+# kustomization.yaml (CrunchyData/postgres-operator installer, same
+# PostgresCluster CRD the database stage consumes).
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: crunchy-postgres-operator
+  namespace: openclaw-postgres
+$patch: delete

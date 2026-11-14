@@ -30,7 +30,7 @@ APPLICATIONS = {
     "oce-openshell": ("2", "openshell", "openshell-system", 10),
     "oce-routing": ("3", "routing", "envoy-gateway-system", 10),
 }
-REPO_URL = "https://github.com/rh-oce-team/oce-ocp-setup.git"
+REPO_URL = "https://github.com/eformat/oce-ocp-setup.git"
 RETRY_BACKOFF = {"duration": "15s", "factor": 2, "maxDuration": "3m"}
 
 
@@ -415,7 +415,10 @@ class GitOpsTreeTests(unittest.TestCase):
         )
         self.assertEqual(
             project["spec"]["sourceRepos"],
-            ["https://github.com/rh-oce-team/oce-ocp-setup.git"],
+            [
+                "https://github.com/eformat/oce-ocp-setup.git",
+                "https://github.com/rh-oce-team/oce-ocp-setup.git",
+            ],
         )
         self.assertEqual(
             {
@@ -428,6 +431,7 @@ class GitOpsTreeTests(unittest.TestCase):
                 "openclaw-system",
                 "openshell-system",
                 "envoy-gateway-system",
+                "postgres-operator",
             },
         )
         self.assertEqual(
@@ -440,6 +444,8 @@ class GitOpsTreeTests(unittest.TestCase):
                 ("security.openshift.io", "SecurityContextConstraints"),
                 ("node.k8s.io", "RuntimeClass"),
                 ("rbac.authorization.k8s.io", "ClusterRole"),
+                ("rbac.authorization.k8s.io", "ClusterRoleBinding"),
+                ("apiextensions.k8s.io", "CustomResourceDefinition"),
                 ("gateway.networking.k8s.io", "GatewayClass"),
             },
         )
@@ -496,8 +502,19 @@ class GitOpsTreeTests(unittest.TestCase):
                     / "kustomization.yaml"
                 ).read_text()
             )
-            self.assertEqual(len(overlay["resources"]), 1, stage)
-            resource = overlay["resources"][0]
+            # Every overlay layers the pinned fork base; a stage may add
+            # further pinned upstream bases (the operators stage delivers PGO
+            # from the upstream installer where the OLM package is absent).
+            fork_bases = [
+                resource
+                for resource in overlay["resources"]
+                if resource.startswith(
+                    "github.com/red-hat-data-services/openclaw-enterprise//"
+                    f"deploy/rhoai/manifests/openshift/base/{stage}?ref="
+                )
+            ]
+            self.assertEqual(len(fork_bases), 1, stage)
+            resource = fork_bases[0]
             self.assertTrue(
                 resource.startswith(
                     "github.com/red-hat-data-services/openclaw-enterprise//"
@@ -508,6 +525,13 @@ class GitOpsTreeTests(unittest.TestCase):
             revision = resource.rsplit("?ref=", 1)[1]
             self.assertRegex(revision, r"^[0-9a-f]{40}$", stage)
             revisions.add(revision)
+            # Any non-fork remote base must pin an immutable ref too.
+            for resource in overlay["resources"]:
+                if resource in fork_bases or not resource.startswith(
+                    ("github.com/", "https://github.com/")
+                ):
+                    continue
+                self.assertIn("?ref=", resource, resource)
         # All five stages must render from the same fork commit.
         self.assertEqual(len(revisions), 1, revisions)
 

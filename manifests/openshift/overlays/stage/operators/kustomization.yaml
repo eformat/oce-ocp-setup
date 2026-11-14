@@ -7,6 +7,16 @@ kind: Kustomization
 resources:
   # Generic manifests live in the fork; this repository keeps the stage profile.
   - github.com/red-hat-data-services/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/operators?ref=920dfe92c41562bb0a50f97afa1787a6ed41b22a
+  # OCP 5.0 operator indexes dropped the crunchy-postgres-operator package
+  # (no operators found in any v5.0 catalog), so the base's OLM Subscription
+  # can never resolve and is deleted below. PGO is delivered from the upstream
+  # installer instead: same PostgresCluster CRD (postgres-operator.crunchydata.com)
+  # the database stage consumes, same v5.8.9 version the fork pins, cluster-wide
+  # RBAC so it manages PostgresClusters in openclaw-postgres.
+  - github.com/CrunchyData/postgres-operator/config/namespace?ref=v5.8.9
+  - github.com/CrunchyData/postgres-operator/config/default?ref=v5.8.9
+patches:
+  - path: remove-pgo-subscription.yaml
 labels:
   - includeSelectors: false
     includeTemplates: false

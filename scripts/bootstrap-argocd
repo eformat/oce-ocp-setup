@@ -6,22 +6,27 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/bootstrap-argocd --env <environment> [--adoption] [--no-root] [--dry-run]
+Usage: scripts/bootstrap-argocd --env <environment> [--instance <name>] [--adoption] [--no-root] [--dry-run]
 
 Install the OpenShift GitOps operator on the cluster selected by the current
 kubeconfig, apply the controller RBAC and the oce-stages AppProject, add the
-PostgresCluster health check to the default ArgoCD instance, and register the
+PostgresCluster health check to the Argo CD instance, and register the
 environment root Application.
 
 Options:
-  --env <name>  Environment to register. Only "stage" exists today.
-  --adoption    Create the five child Applications with manual sync so existing
-                resources can be reviewed before Argo changes them. Use once,
-                then rerun without it to enable automated sync.
-  --no-root     Install Argo CD and the project, but do not register the root.
-                Use it to prepare a cluster before the manifests are merged.
-  --dry-run     Validate and print the commands without changing the cluster.
-  -h, --help    Show this help.
+  --env <name>        Environment to register. Only "stage" exists today.
+  --instance <name>   Argo CD instance to adopt. Defaults to "openshift-gitops".
+                      Use the existing instance's name when the operator is
+                      already installed under a custom instance (for example a
+                      single-node cluster that already runs one). The RBAC
+                      binding is re-pointed at that instance's controller.
+  --adoption          Create the five child Applications with manual sync so existing
+                      resources can be reviewed before Argo changes them. Use once,
+                      then rerun without it to enable automated sync.
+  --no-root           Install Argo CD and the project, but do not register the root.
+                      Use it to prepare a cluster before the manifests are merged.
+  --dry-run           Validate and print the commands without changing the cluster.
+  -h, --help          Show this help.
 EOF
 }
 
@@ -31,6 +36,7 @@ die() {
 }
 
 environment=''
+instance='openshift-gitops'
 adoption=false
 no_root=false
 dry_run=false
@@ -43,6 +49,15 @@ while (($#)); do
       ;;
     --env=*)
       environment="${1#--env=}"
+      shift
+      ;;
+    --instance)
+      (($# >= 2)) || die '--instance needs a value'
+      instance="$2"
+      shift 2
+      ;;
+    --instance=*)
+      instance="${1#--instance=}"
       shift
       ;;
     --adoption)
@@ -73,6 +88,10 @@ case "$environment" in
   prod) die 'prod is a placeholder; see gitops/clusters/prod/README.md' ;;
   *) die "unknown environment: $environment" ;;
 esac
+
+if [[ ! "$instance" =~ ^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$ ]]; then
+  die "--instance must be a Kubernetes object name (DNS label): $instance"
+fi
 
 command -v oc >/dev/null 2>&1 || die 'oc is required'
 
@@ -121,30 +140,53 @@ if $dry_run; then
 fi
 
 step 'Apply the OpenShift GitOps operator Subscription'
-run apply -f "$bootstrap_dir/gitops-operator.yaml"
+if $dry_run; then
+  # Dry run must not talk to the cluster beyond the render check above.
+  printf 'Would apply only when the operator is not already installed.\n'
+  run apply -f "$bootstrap_dir/gitops-operator.yaml"
+elif [ -n "$(oc -n openshift-operators get csv \
+  -l 'operators.coreos.com/openshift-gitops-operator.openshift-operators' \
+  -o jsonpath='{.items}' 2>/dev/null)" ]; then
+  # An existing install owns the operator: OLM rejects a second Subscription
+  # for the same package, and adoption reuses its Argo CD instance instead.
+  printf 'Operator already installed; skipping the Subscription apply.\n'
+else
+  run apply -f "$bootstrap_dir/gitops-operator.yaml"
+fi
 
 if $dry_run; then
-  printf 'Would wait for argocd/openshift-gitops to appear and become Available.\n'
+  printf 'Would wait for argocd/%s to appear and become Available.\n' "$instance"
 else
-  step 'Wait for the default Argo CD instance'
+  step "Wait for the $instance Argo CD instance"
   # The operator creates the namespace and the default resource only after OLM
   # resolves the InstallPlan. A jsonpath wait on a missing object fails
   # immediately, so poll for the resource before waiting on its phase.
   deadline=$((SECONDS + 600))
-  until oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; do
-    ((SECONDS < deadline)) || die 'timed out waiting for argocd/openshift-gitops to appear'
+  until oc -n openshift-gitops get argocd "$instance" >/dev/null 2>&1; do
+    ((SECONDS < deadline)) || die "timed out waiting for argocd/$instance to appear"
     sleep 5
   done
   oc -n openshift-gitops wait \
     --for=jsonpath='{.status.phase}'=Available \
-    argocd/openshift-gitops --timeout=5m
+    "argocd/$instance" --timeout=5m
 fi
 
 step 'Apply controller RBAC and the oce-stages AppProject'
 run apply -k "$bootstrap_dir"
 
-step 'Add the resource health checks to the default Argo CD instance'
-run -n openshift-gitops patch argocd openshift-gitops \
+if [[ "$instance" != openshift-gitops ]]; then
+  # The ClusterRoleBinding in gitops/bootstrap/rbac.yaml subjects the default
+  # instance's controller SA. Adopting a custom instance re-points it at that
+  # instance's controller, which the OpenShift GitOps operator names
+  # <instance>-argocd-application-controller.
+  step "Re-point the RBAC binding at the $instance controller"
+  run -n openshift-gitops patch clusterrolebinding oce-argocd-stages \
+    --type merge \
+    -p "{\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"$instance-argocd-application-controller\",\"namespace\":\"openshift-gitops\"}]}"
+fi
+
+step "Add the resource health checks to the $instance Argo CD instance"
+run -n openshift-gitops patch argocd "$instance" \
   --type merge \
   --patch-file "$bootstrap_dir/argocd-resource-health.patch.yaml"
 

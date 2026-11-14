@@ -16,7 +16,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    repoURL: https://github.com/eformat/oce-ocp-setup.git
     targetRevision: main
     path: gitops/clusters/stage/apps
   destination:
