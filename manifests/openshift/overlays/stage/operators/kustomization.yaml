@@ -6,7 +6,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # Generic manifests live in the fork; this repository keeps the stage profile.
-  - github.com/eformat/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/operators?ref=a5775ff08bbe98b221cb8d8a941007f1a12d6b8b
+  - github.com/eformat/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/operators?ref=50afdb150157ed0c278147c4b2d30e32046b1b03
   # OCP 5.0 operator indexes dropped the crunchy-postgres-operator package
   # (no operators found in any v5.0 catalog), so the base's OLM Subscription
   # can never resolve and is deleted below. PGO is delivered from the upstream

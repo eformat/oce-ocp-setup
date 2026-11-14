@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   # Generic manifests live in the fork; this repository keeps the stage profile.
-  - github.com/eformat/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/routing?ref=a5775ff08bbe98b221cb8d8a941007f1a12d6b8b
+  - github.com/eformat/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/routing?ref=50afdb150157ed0c278147c4b2d30e32046b1b03
 labels:
   - includeSelectors: false
     includeTemplates: false
