@@ -1,0 +1,18 @@
+# Extend the deployed OpenClaw Enterprise runtime image (used by the Agent
+# gateway and sandbox workloads) with a sandbox-only patch. Built by
+# scripts/build-runtime-overlay.sh.
+#
+# OpenClaw 2026.10.10 enables Codex code mode on every app-server thread
+# (buildCodexRuntimeThreadConfig -> CODEX_CODE_MODE_THREAD_CONFIG), and codex
+# 0.164 emits the code-mode `exec` tool as a custom tool with a grammar format
+# (core/src/tools/code_mode/execute_spec.rs). OpenAI-compatible model endpoints
+# such as MaaS reject grammar-format custom tools with HTTP 400, so every turn
+# fails regardless of the model catalog. Disable code mode in the thread config
+# OpenClaw sends: the native shell/file tools and the OpenClaw bridge tools stay
+# as function tools, which verified MaaS-safe against the pinned runtime.
+FROM quay.io/aipcc/base-images/agentic/oce-runtime@sha256:e69a09197900ca42ca4bf4a40dabb110f6bd0991975f09b7832755b7bc56f3ae
+# The image runs as uid 1000 (node) and the dist tree is root-owned, so the
+# patched file is COPYed back with the original root ownership instead of an
+# in-place sed. Keep this COPY in sync with the pinned runtime digest; the
+# build script rewrites the FROM line to the deployed digest.
+COPY --chown=0:0 thread-requests.patched.mjs /app/node_modules/openclaw/dist/thread-requests-qRbU0nwa.mjs

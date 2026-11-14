@@ -9,3 +9,10 @@ FROM quay.io/aipcc/base-images/agentic/oce-controller@sha256:4699229e8c423ace3e4
 COPY apps/controller/src/drivers/compute/codex-model-configuration.ts apps/controller/src/drivers/compute/codex-model-configuration.ts
 COPY apps/controller/src/drivers/compute/plugin-runtime.ts apps/controller/src/drivers/compute/plugin-runtime.ts
 COPY apps/controller/src/drivers/compute/kubernetes/runtime-entrypoints.ts apps/controller/src/drivers/compute/kubernetes/runtime-entrypoints.ts
+# OpenClaw 2026.10.10 enables Codex code mode on every app-server thread, and
+# codex 0.164 emits the code-mode `exec` tool as a custom tool with a grammar
+# format (core/src/tools/code_mode/execute_spec.rs). OpenAI-compatible model
+# endpoints such as MaaS reject grammar-format custom tools with HTTP 400, so
+# every turn fails regardless of the model catalog. The fix ships in the
+# runtime image overlay (see manifests/openshift/runtime-overlay/) because the
+# OpenClaw dist that builds thread/start lives in oce-runtime, not here.
