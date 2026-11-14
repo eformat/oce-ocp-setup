@@ -37,7 +37,7 @@ for stage in "${stages[@]}"; do
   files+=("$file")
 done
 
-pattern='github\.com/red-hat-data-services/openclaw-enterprise//[^?]+\?ref=[0-9a-f]{40}'
+pattern='github\.com/eformat/openclaw-enterprise//[^?]+\?ref=[0-9a-f]{40}'
 for file in "${files[@]}"; do
   if ! grep -Eq "$pattern" "$file"; then
     echo "pin-fork: $file has no fork base reference; refusing to change any overlay" >&2
@@ -50,7 +50,7 @@ if $verify; then
     echo "pin-fork: curl is required to verify the commit" >&2
     exit 1
   fi
-  url="https://api.github.com/repos/red-hat-data-services/openclaw-enterprise/commits/${revision}"
+  url="https://api.github.com/repos/eformat/openclaw-enterprise/commits/${revision}"
   if ! curl --fail --silent --show-error --max-time 20 "$url" >/dev/null; then
     echo "pin-fork: $revision is not a commit in the fork, or GitHub is unreachable" >&2
     exit 1
@@ -59,7 +59,7 @@ fi
 
 for file in "${files[@]}"; do
   sed -i -E \
-    "s#(github\.com/red-hat-data-services/openclaw-enterprise//[^?]+\?ref=)[0-9a-f]{40}#\1${revision}#" \
+    "s#(github\.com/eformat/openclaw-enterprise//[^?]+\?ref=)[0-9a-f]{40}#\1${revision}#" \
     "$file"
 done
 

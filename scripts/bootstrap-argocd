@@ -223,7 +223,7 @@ EOF
 
 Argo now creates the stage Applications wave by wave from the pinned fork
 revision. Everything else stays in the fork's deployment guide,
-https://github.com/red-hat-data-services/openclaw-enterprise/blob/main/deploy/rhoai/README.md,
+https://github.com/eformat/openclaw-enterprise/blob/main/deploy/rhoai/README.md,
 in this order:
 
   1. Create the four system Secrets and run the SQL bootstrap.

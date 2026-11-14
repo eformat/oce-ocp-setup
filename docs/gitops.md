@@ -4,10 +4,10 @@ This repository installs Argo CD on a cluster and reconciles the
 environment-specific OCE platform stages. The generic OpenShift deployment
 instructions, manifests, Helm chart, and upgrade lifecycle live in the
 downstream fork,
-[`red-hat-data-services/openclaw-enterprise`](https://github.com/red-hat-data-services/openclaw-enterprise),
+[`eformat/openclaw-enterprise`](https://github.com/eformat/openclaw-enterprise),
 under `deploy/rhoai/`.
 
-Read the fork's [deployment guide](https://github.com/red-hat-data-services/openclaw-enterprise/blob/main/deploy/rhoai/README.md)
+Read the fork's [deployment guide](https://github.com/eformat/openclaw-enterprise/blob/main/deploy/rhoai/README.md)
 first. This guide covers only what this repository adds: the Argo CD bootstrap,
 the stage profile, and the pinned fork revision Argo renders.
 
@@ -47,7 +47,7 @@ remote base pinned to a commit, for example:
 
 ```yaml
 resources:
-  - github.com/red-hat-data-services/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/operators?ref=<sha>
+  - github.com/eformat/openclaw-enterprise//deploy/rhoai/manifests/openshift/base/operators?ref=<sha>
 ```
 
 The generic manifests are not copied here. This repository owns only the

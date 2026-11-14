@@ -509,7 +509,7 @@ class GitOpsTreeTests(unittest.TestCase):
                 resource
                 for resource in overlay["resources"]
                 if resource.startswith(
-                    "github.com/red-hat-data-services/openclaw-enterprise//"
+                    "github.com/eformat/openclaw-enterprise//"
                     f"deploy/rhoai/manifests/openshift/base/{stage}?ref="
                 )
             ]
@@ -517,7 +517,7 @@ class GitOpsTreeTests(unittest.TestCase):
             resource = fork_bases[0]
             self.assertTrue(
                 resource.startswith(
-                    "github.com/red-hat-data-services/openclaw-enterprise//"
+                    "github.com/eformat/openclaw-enterprise//"
                     f"deploy/rhoai/manifests/openshift/base/{stage}?ref="
                 ),
                 stage,
