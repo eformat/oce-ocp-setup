@@ -49,6 +49,32 @@ ownership boundary.
    `scripts/promote-stage --pause` and `scripts/promote-stage --resume` so the
    stages apply in order. See [the GitOps guide](docs/gitops.md).
 
+## Sandbox image overlays
+
+The sandbox extends the published Red Hat images with local changes by
+layering overlay images on the digest the cluster actually runs, then
+repointing the reference. Both overlays are built and pushed to the operator's
+`quay.io/eformat` namespace; the digests land in the private inputs (never in
+this repository).
+
+- **Controller overlay** (`manifests/openshift/controller-overlay/`,
+  `scripts/build-controller-overlay.sh`): copies changed controller sources on
+  top of the deployed `oce-controller` digest. Set the published digest as
+  `images.controller` in the private `values.yaml`, then `helm upgrade oce`.
+- **Runtime overlay** (`manifests/openshift/runtime-overlay/`,
+  `scripts/build-runtime-overlay.sh`): patches the OpenClaw dist inside the
+  deployed `oce-runtime` digest — the image that serves both the Agent gateway
+  and the sandbox agent container. The sandbox-only patch disables Codex code
+  mode (`features.code_mode`) because codex 0.164 emits the code-mode `exec`
+  tool as a custom tool with a grammar format, which OpenAI-compatible model
+  endpoints such as MaaS reject with HTTP 400 on every turn. Set the published
+  digest as `drivers.compute.configuration.images.gateway` and `...images.agent`
+  in the private `installation.yaml`, run the fork's
+  `deploy/rhoai/scripts/prepare-inputs refresh`, apply the installation startup
+  Secret from it, and restart the `openclaw-enterprise-api` and `-worker`
+  deployments. The patched file is extracted from the deployed base image and
+  COPYed back, so update the overlay whenever the base digest changes.
+
 ## Layout
 
 ```text
@@ -59,9 +85,17 @@ gitops/
     └── prod/               Placeholder
 manifests/openshift/overlays/stage/
                             Stage profile on pinned fork bases
+manifests/openshift/controller-overlay/
+                            Controller image overlay (Containerfile)
+manifests/openshift/runtime-overlay/
+                            Runtime image overlay (Containerfile.template)
 scripts/
 ├── bootstrap-argocd        Install Argo CD and register the root Application
-└── pin-fork                Move the overlays to a fork commit
+├── pin-fork                Move the overlays to a fork commit
+├── build-controller-overlay.sh
+│                           Build and publish the controller overlay image
+└── build-runtime-overlay.sh
+                            Build and publish the runtime overlay image
 ```
 
 ## Verification
