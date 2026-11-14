@@ -1,0 +1,11 @@
+# Extend the deployed OpenClaw Enterprise controller image with local
+# controller changes for a sandbox deployment. The base is the currently
+# deployed digest; the build copies the changed controller sources on top, so
+# no dependency rebuild is needed. Built by
+# scripts/build-controller-overlay.sh, which selects the files to copy from
+# `git diff --name-only` between the deployed image's source revision and the
+# local checkout.
+FROM quay.io/aipcc/base-images/agentic/oce-controller@sha256:4699229e8c423ace3e48038d1090d3843e5553e330c7553a807963948bf8b795
+COPY apps/controller/src/drivers/compute/codex-model-configuration.ts apps/controller/src/drivers/compute/codex-model-configuration.ts
+COPY apps/controller/src/drivers/compute/plugin-runtime.ts apps/controller/src/drivers/compute/plugin-runtime.ts
+COPY apps/controller/src/drivers/compute/kubernetes/runtime-entrypoints.ts apps/controller/src/drivers/compute/kubernetes/runtime-entrypoints.ts
