@@ -1,0 +1,104 @@
+{
+  "kind": "agent",
+  "values": {
+    "agents": {
+      "defaults": {
+        "model": "codex/publishers/prelude-maas/models/glm-53-flash",
+        "models": {
+          "codex/publishers/prelude-maas/models/glm-53-flash": {
+            "agentRuntime": {
+              "id": "codex"
+            }
+          }
+        },
+        "workspace": "/sandbox/enterprise",
+        "sandbox": {
+          "mode": "off"
+        }
+      },
+      "entries": {
+        "main": {
+          "identity": {
+            "name": "__AGENT_DISPLAY_NAME__"
+          }
+        }
+      }
+    },
+    "gateway": {
+      "mode": "local",
+      "bind": "lan",
+      "controlUi": {
+        "enabled": true,
+        "allowedOrigins": [
+          "http://127.0.0.1:18789",
+          "http://localhost:18789"
+        ]
+      },
+      "auth": {
+        "password": {
+          "source": "env",
+          "provider": "default",
+          "id": "OPENCLAW_GATEWAY_PASSWORD"
+        },
+        "trustedProxy": {
+          "deviceAutoApprove": {
+            "enabled": true,
+            "scopes": [
+              "operator.admin"
+            ]
+          }
+        }
+      },
+      "http": {
+        "endpoints": {
+          "chatCompletions": {
+            "enabled": true
+          }
+        }
+      }
+    },
+    "models": {
+      "providers": {
+        "codex": {
+          "api": "openai-responses",
+          "baseUrl": "http://127.0.0.1:9",
+          "models": [
+            {
+              "id": "publishers/prelude-maas/models/glm-53-flash",
+              "name": "GLM 5.3 Flash",
+              "modelInfo": {
+                "context_window": 200000,
+                "default_reasoning_summary": "none",
+                "display_name": "GLM 5.3 Flash",
+                "max_context_window": 200000,
+                "prefer_websockets": false,
+                "shell_type": "shell_command",
+                "support_verbosity": false
+              }
+            }
+          ]
+        }
+      }
+    },
+    "plugins": {
+      "allow": [
+        "codex"
+      ],
+      "entries": {
+        "codex": {
+          "config": {
+            "appServer": {
+              "approvalPolicy": "on-request",
+              "authToken": "${APP_SERVER_TOKEN}",
+              "mode": "guardian",
+              "sandbox": "read-only",
+              "transport": "websocket",
+              "url": "${APP_SERVER_URL}"
+            }
+          },
+          "enabled": true
+        }
+      }
+    }
+  }
+}

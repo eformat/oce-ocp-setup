@@ -1,0 +1,22 @@
+{
+  "namespace": "legare",
+  "agent": "legare",
+  "displayName": "Legare",
+  "occUrl": "https://occ.apps.ocp5-m6wl4-nrq4q.sandbox1832.opentlc.com",
+  "users": [
+    { "name": "legare", "email": "lkerriso@redhat.com", "openshiftUser": "legare" }
+  ],
+  "secrets": [
+    { "name": "maas-glm-key", "valueFile": "~/.local/state/openclaw-enterprise/rhoai/maas-api-key" }
+  ],
+  "credentialSources": [
+    {
+      "name": "maas-glm",
+      "type": "openai",
+      "harnessAuth": true,
+      "config": { "authorized_base_url": "https://maas.apps.ocp.cloud.rhai-tmm.dev/v1" },
+      "secret": "maas-glm-key",
+      "secretField": "api_key"
+    }
+  ]
+}

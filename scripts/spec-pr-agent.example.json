@@ -1,0 +1,38 @@
+{
+  "namespace": "skills-pr-agent",
+  "agent": "pr-agent",
+  "displayName": "PR Agent",
+  "occUrl": "https://occ.apps.ocp5-m6wl4-nrq4q.sandbox1832.opentlc.com",
+  "users": [
+    { "name": "mike" },
+    { "name": "john", "email": "jhultz@redhat.com", "openshiftUser": "john" }
+  ],
+  "secrets": [
+    { "name": "maas-glm-key", "valueFile": "~/.local/state/openclaw-enterprise/rhoai/maas-api-key" },
+    { "name": "github-pat", "valueFile": "~/.local/state/openclaw-enterprise/rhoai/github-pat" }
+  ],
+  "credentialSources": [
+    {
+      "name": "maas-glm",
+      "type": "openai",
+      "harnessAuth": true,
+      "config": { "authorized_base_url": "https://maas.apps.ocp.cloud.rhai-tmm.dev/v1" },
+      "secret": "maas-glm-key",
+      "secretField": "api_key"
+    },
+    {
+      "name": "github-git",
+      "type": "bearer-token",
+      "config": { "host": "github.com", "env_var": "GITHUB_TOKEN" },
+      "secret": "github-pat",
+      "secretField": "token"
+    },
+    {
+      "name": "github-api",
+      "type": "bearer-token",
+      "config": { "host": "api.github.com", "env_var": "GITHUB_API_TOKEN" },
+      "secret": "github-pat",
+      "secretField": "token"
+    }
+  ]
+}
